@@ -232,6 +232,28 @@ def test_run():
     ts.log('---')
     '''
 
+    volt_var = eut.volt_watt()
+    if volt_var is not None:
+        ts.log('DER volt/watt:')
+        ts.log('  Ena: %s' % (volt_var.get('Ena')))
+        ts.log('  ActCrv: %s' % (volt_var.get('ActCrv')))
+        ts.log('  NCrv: %s' % (volt_var.get('NCrv')))
+        ts.log('  NPt: %s' % (volt_var.get('NPt')))
+        ts.log('  WinTms: %s' % (volt_var.get('WinTms')))
+        ts.log('  RmpTms: %s' % (volt_var.get('RmpTms')))
+        ts.log('  RvrtTms: %s' % (volt_var.get('RvrtTms')))
+        curve = volt_var.get('curve')
+        if curve is not None:
+            ts.log('  curve #%d:' % (curve.get('id')))
+            ts.log('    v: %s' % (curve.get('v')))
+            ts.log('    w: %s' % (curve.get('w')))
+            ts.log('    DeptRef: %s' % (curve.get('DeptRef')))
+            ts.log('    RmpTms: %s' % (curve.get('RmpTms')))
+            ts.log('    RmpDecTmm: %s' % (curve.get('RmpDecTmm')))
+            ts.log('    RmpIncTmm: %s' % (curve.get('RmpIncTmm')))
+    else:
+        ts.log_warning('DER volt_var not supported')
+
     status = eut.controls_status()
     if status is not None:
         ts.log('    Is Fixed_W enabled?: %s' % (status.get('Fixed_W')))
