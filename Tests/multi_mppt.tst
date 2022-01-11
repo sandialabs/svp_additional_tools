@@ -5,16 +5,18 @@
     <param name="pvsim_2.terrasas.channel" type="string">2</param>
     <param name="pvsim_3.terrasas.channel" type="string">3</param>
     <param name="pvsim_4.terrasas.channel" type="string">4</param>
+    <param name="test.t_stable" type="float">5.0</param>
     <param name="pvsim_5.terrasas.channel" type="string">5</param>
     <param name="test.n_pv" type="int">6</param>
     <param name="pvsim_6.terrasas.channel" type="string">6</param>
-    <param name="test.n_meas" type="int">12</param>
+    <param name="test.n_meas" type="int">50</param>
     <param name="pvsim_1.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_2.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_3.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_4.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_5.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_6.terrasas.ipaddr" type="string">192.168.0.167</param>
+    <param name="test.t_start" type="float">300.0</param>
     <param name="pvsim_1.terrasas.vmp" type="float">600.0</param>
     <param name="pvsim_2.terrasas.vmp" type="float">600.0</param>
     <param name="pvsim_3.terrasas.vmp" type="float">600.0</param>
@@ -37,9 +39,9 @@
     <param name="hil.opal.hil_stop_time" type="float">80000.0</param>
     <param name="hil.opal.workspace_path" type="string">C:\Users\DETLDAQ\OPAL-RT/RT-LABv2020.4_Workspace</param>
     <param name="das.opal.wfm_dir" type="string">C:\Users\DETLDAQ\OPAL-RT\RT-LABv2020.4_Workspace\CoreONE_Test\models\CoreONE_Test\coreone_test_sm_source\OpREDHAWKtarget</param>
+    <param name="hil.opal.project_name" type="string">CoreONE_Test</param>
     <param name="hil.opal.project_dir" type="string">CoreONE_Test</param>
     <param name="hil.opal.rt_lab_model" type="string">CoreONE_Test</param>
-    <param name="hil.opal.project_name" type="string">CoreONE_Test.llp</param>
     <param name="der.mode" type="string">Disabled</param>
     <param name="pvsim_1.terrasas.curve_type" type="string">EN50530</param>
     <param name="pvsim_2.terrasas.curve_type" type="string">EN50530</param>

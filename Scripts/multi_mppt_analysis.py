@@ -30,15 +30,21 @@ def test_run():
     result_params = None
 
     try:
-        open_proj = ts.param_value('hil_config.open')
-        model_name = ts.param_value('hil_config.model_name')
-
         n_pv = ts.param_value('test.n_pv')
         n_meas = ts.param_value('test.n_meas')
         p_max = ts.param_value('test.p_max')
         p_max_per_input = p_max / n_pv
+        t_start = ts.param_value('test.t_start')
+        t_stable = ts.param_value('test.t_stable')
 
-        # initialize the hardware in the loop
+        # initialize the pv simulators
+        pv = []
+        for i in range(n_pv):
+            pv.append(pvsim.pvsim_init(ts, '%s' % (i+1)))
+        for i in range(n_pv):
+            pv[i].power_on()
+
+        # initialize the hardware in the loop - this is only for AC data capture
         phil = hil.hil_init(ts)
         if phil is not None:
             ts.log("{}".format(phil.info()))
@@ -59,30 +65,17 @@ def test_run():
             daq.sc['PV_I_%s' % (i+1)] = 0
             daq.sc['PV_P_%s' % (i+1)] = 0
             daq.sc['PV_MPPT_Acc_%s' % (i+1)] = 0
-        daq.data_capture(True)
-        ts.sleep(0.5)
-
-        # initialize the pv simulators
-        pv = []
-        for i in range(n_pv):
-            pv.append(pvsim.pvsim_init(ts, '%s' % (i+1)))
-
-        for i in range(n_pv):
-            pv[i].power_on()
 
         # initialize the der
         eut = der.der_init(ts)
-        # eut.config()
-        ts.sleep(0.5)
+        ts.log('Allowing inverter %0.2f seconds to start...' % t_start)
+        ts.sleep(t_start)
 
         # open result summary file
         result_summary_filename = 'result_summary.csv'
         result_summary = open(ts.result_file_path(result_summary_filename), 'a+')
         ts.result_file(result_summary_filename)
-        result_summary.write('Test, p_ac, p_dc, eff, mppt_accuracy\n')
-
-        ts.log_debug('Allowing Inverter Time to Start...')
-        ts.sleep(1)
+        result_summary.write('Test, n_derated, p_max, p_ac, p_dc, eff, mppt_accuracy\n')
 
         total_runs = 0
         for v_mp in [600, 720, 800]:  # 3
@@ -90,6 +83,8 @@ def test_run():
             for derating in [0.2, 0.4, 0.6, 0.8]:  # 4
                 ts.log('Starting Test with derating = %s' % derating)
                 for combo in list(itertools.product([0, 1], repeat=n_pv)):  # 2^6 = 64
+                    n_derated = sum(combo)
+                    max_power = ((n_pv - n_derated) + (n_derated * derating)) * p_max_per_input
                     total_runs += 1
                     test_name = 'mppt_v=%s_derate=%s_strings=%s' % (v_mp, derating, str(combo).replace(',', ''))
                     ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
@@ -103,6 +98,9 @@ def test_run():
                         else:
                             # ts.log_debug('Setting PV #%d to NO DERATE' % (i + 1))
                             pv[i].iv_curve_config(pmp=p_max_per_input, vmp=v_mp)
+
+                    ts.sleep(t_stable)  # give inverter time to reach steady-state
+                    daq.data_capture(True)  # begin dataset for this test case
 
                     p_ac = 0.
                     p_dc = 0.
@@ -119,8 +117,8 @@ def test_run():
                             daq.sc['PV_MPPT_Acc_%s' % (i+1)] = pv_data['MPPT_Accuracy']
 
                         daq.data_sample()  # add new data points with soft channels to data set
-                        data = daq.data_capture_read()
-                        # ts.log('current data: %s' % data)  # return last data set
+                        data = daq.data_capture_read()  # get last points sampled
+                        # ts.log('current data: %s' % data)  # print last data points
                         p_ac += (data['AC_P_1'] + data['AC_P_2'] + data['AC_P_3']) / n_meas
                         p_dc += (data['PV_P_1'] + data['PV_P_2'] + data['PV_P_3'] + data['PV_P_4']
                                  + data['PV_P_5'] + data['PV_P_6']) / n_meas
@@ -130,9 +128,11 @@ def test_run():
                         ts.sleep(1)
                     ds = daq.data_capture_dataset()  # get dataset
                     ds.to_csv(ts.result_file_path(test_name + '.csv'))  # write to csv
+                    daq.data_capture(False)  # finish this dataset
 
                     # Create new entry for summary file
-                    result_summary.write('%s, %s, %s, %s, %s\n' % (test_name, p_ac, p_dc, p_ac/p_dc, mppt_acc))
+                    result_summary.write('%s, %s, %s, %s, %s, %s, %s\n' % (test_name, n_derated, max_power,
+                                                                           p_ac, p_dc, p_ac/p_dc, mppt_acc))
 
         result = script.RESULT_COMPLETE
 
@@ -190,6 +190,8 @@ info.param_group('test', label='Test Configuration')
 info.param('test.n_pv', label='Number of PV Inputs?', default=6)
 info.param('test.n_meas', label='Number of Measurements at Each I-V Curve Config?', default=12)
 info.param('test.p_max', label='Inverter Nameplate Power (W)?', default=33000.)
+info.param('test.t_start', label='Inverter Start Up Time (s)?', default=300.)
+info.param('test.t_stable', label='Inverter Stabilization Time (s)?', default=5.)
 
 hil.params(info)
 das.params(info)
