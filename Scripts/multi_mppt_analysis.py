@@ -131,8 +131,11 @@ def test_run():
                     daq.data_capture(False)  # finish this dataset
 
                     # Create new entry for summary file
+                    mppt_eff = 100. * (p_ac / p_dc)
                     result_summary.write('%s, %s, %s, %s, %s, %s, %s\n' % (test_name, n_derated, max_power,
-                                                                           p_ac, p_dc, p_ac/p_dc, mppt_acc))
+                                                                           p_ac, p_dc, mppt_eff, mppt_acc))
+                    ts.log_warning('Avg data for %s: P_AC = %0.1f W, P_DC = %0.1f W, MPPT Eff = %0.4f, '
+                                   'MPPT Accuracy = %s\n' % (test_name, p_ac, p_dc, mppt_eff, mppt_acc))
 
         result = script.RESULT_COMPLETE
 
