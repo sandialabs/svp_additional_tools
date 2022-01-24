@@ -17,6 +17,7 @@
     <param name="pvsim_5.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="pvsim_6.terrasas.ipaddr" type="string">192.168.0.167</param>
     <param name="test.t_start" type="float">300.0</param>
+    <param name="test.test_start" type="int">487</param>
     <param name="pvsim_1.terrasas.vmp" type="float">600.0</param>
     <param name="pvsim_2.terrasas.vmp" type="float">600.0</param>
     <param name="pvsim_3.terrasas.vmp" type="float">600.0</param>

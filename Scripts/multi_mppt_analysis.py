@@ -36,6 +36,7 @@ def test_run():
         p_max_per_input = p_max / n_pv
         t_start = ts.param_value('test.t_start')
         t_stable = ts.param_value('test.t_stable')
+        test_start = int(ts.param_value('test.test_start'))
 
         # initialize the pv simulators
         pv = []
@@ -77,6 +78,8 @@ def test_run():
         ts.result_file(result_summary_filename)
         result_summary.write('Test, n_derated, p_max, p_ac, p_dc, eff, mppt_accuracy\n')
 
+        ts.log_debug('Starting experiments from Test #%d' % test_start)
+
         total_runs = 0
         for v_mp in [600, 720, 800]:  # 3
             ts.log('Starting tests with v_mp = %s' % v_mp)
@@ -87,55 +90,58 @@ def test_run():
                     max_power = ((n_pv - n_derated) + (n_derated * derating)) * p_max_per_input
                     total_runs += 1
                     test_name = 'mppt_v=%s_derate=%s_strings=%s' % (v_mp, derating, str(combo).replace(',', ''))
-                    ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
+                    if total_runs < test_start:
+                        ts.log_debug('Start Test = %d. Skipping Test #%d: %s' % (test_start, total_runs, test_name))
+                    else:
+                        ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
 
-                    # Set PV I-V Curves
-                    for i in range(n_pv):
-                        if str(combo[i]) == '1':
-                            # ts.log_debug('Setting PV #%d to the derated power level' % (i + 1))
-                            p_mp = p_max_per_input * derating
-                            pv[i].iv_curve_config(pmp=p_mp, vmp=v_mp)
-                        else:
-                            # ts.log_debug('Setting PV #%d to NO DERATE' % (i + 1))
-                            pv[i].iv_curve_config(pmp=p_max_per_input, vmp=v_mp)
+                        # Set PV I-V Curves
+                        for i in range(n_pv):
+                            if str(combo[i]) == '1':
+                                # ts.log_debug('Setting PV #%d to the derated power level' % (i + 1))
+                                p_mp = p_max_per_input * derating
+                                pv[i].iv_curve_config(pmp=p_mp, vmp=v_mp)
+                            else:
+                                # ts.log_debug('Setting PV #%d to NO DERATE' % (i + 1))
+                                pv[i].iv_curve_config(pmp=p_max_per_input, vmp=v_mp)
 
-                    ts.sleep(t_stable)  # give inverter time to reach steady-state
-                    daq.data_capture(True)  # begin dataset for this test case
+                        ts.sleep(t_stable)  # give inverter time to reach steady-state
+                        daq.data_capture(True)  # begin dataset for this test case
 
-                    p_ac = 0.
-                    p_dc = 0.
-                    mppt_acc = 0.
-                    for meas in range(n_meas):  # Take n_meas measurements
-                        daq.sc['PV_P_MPP_NO_DERATE'] = p_max_per_input
-                        daq.sc['PV_V_MPP'] = v_mp
-                        for i in range(n_pv):  # Get PV data and add to the soft channel list
-                            pv_data = pv[i].measurements_get()
-                            daq.sc['Test'] = test_name
-                            daq.sc['PV_V_%s' % (i+1)] = pv_data['DC_V']
-                            daq.sc['PV_I_%s' % (i+1)] = pv_data['DC_I']
-                            daq.sc['PV_P_%s' % (i+1)] = pv_data['DC_P']
-                            daq.sc['PV_MPPT_Acc_%s' % (i+1)] = pv_data['MPPT_Accuracy']
+                        p_ac = 0.
+                        p_dc = 0.
+                        mppt_acc = 0.
+                        for meas in range(n_meas):  # Take n_meas measurements
+                            daq.sc['PV_P_MPP_NO_DERATE'] = p_max_per_input
+                            daq.sc['PV_V_MPP'] = v_mp
+                            for i in range(n_pv):  # Get PV data and add to the soft channel list
+                                pv_data = pv[i].measurements_get()
+                                daq.sc['Test'] = test_name
+                                daq.sc['PV_V_%s' % (i+1)] = pv_data['DC_V']
+                                daq.sc['PV_I_%s' % (i+1)] = pv_data['DC_I']
+                                daq.sc['PV_P_%s' % (i+1)] = pv_data['DC_P']
+                                daq.sc['PV_MPPT_Acc_%s' % (i+1)] = pv_data['MPPT_Accuracy']
 
-                        daq.data_sample()  # add new data points with soft channels to data set
-                        data = daq.data_capture_read()  # get last points sampled
-                        # ts.log('current data: %s' % data)  # print last data points
-                        p_ac += (data['AC_P_1'] + data['AC_P_2'] + data['AC_P_3']) / n_meas
-                        p_dc += (data['PV_P_1'] + data['PV_P_2'] + data['PV_P_3'] + data['PV_P_4']
-                                 + data['PV_P_5'] + data['PV_P_6']) / n_meas
-                        mppt_acc += (data['PV_MPPT_Acc_1'] + data['PV_MPPT_Acc_2'] + data['PV_MPPT_Acc_3']
-                                     + data['PV_MPPT_Acc_4'] + data['PV_MPPT_Acc_5'] + data['PV_MPPT_Acc_6']) / \
-                                    (n_meas * n_pv)  # average over the measurements and DC inputs
-                        ts.sleep(1)
-                    ds = daq.data_capture_dataset()  # get dataset
-                    ds.to_csv(ts.result_file_path(test_name + '.csv'))  # write to csv
-                    daq.data_capture(False)  # finish this dataset
+                            daq.data_sample()  # add new data points with soft channels to data set
+                            data = daq.data_capture_read()  # get last points sampled
+                            # ts.log('current data: %s' % data)  # print last data points
+                            p_ac += (data['AC_P_1'] + data['AC_P_2'] + data['AC_P_3']) / n_meas
+                            p_dc += (data['PV_P_1'] + data['PV_P_2'] + data['PV_P_3'] + data['PV_P_4']
+                                     + data['PV_P_5'] + data['PV_P_6']) / n_meas
+                            mppt_acc += (data['PV_MPPT_Acc_1'] + data['PV_MPPT_Acc_2'] + data['PV_MPPT_Acc_3']
+                                         + data['PV_MPPT_Acc_4'] + data['PV_MPPT_Acc_5'] + data['PV_MPPT_Acc_6']) / \
+                                        (n_meas * n_pv)  # average over the measurements and DC inputs
+                            ts.sleep(1)
+                        ds = daq.data_capture_dataset()  # get dataset
+                        ds.to_csv(ts.result_file_path(test_name + '.csv'))  # write to csv
+                        daq.data_capture(False)  # finish this dataset
 
-                    # Create new entry for summary file
-                    mppt_eff = 100. * (p_ac / p_dc)
-                    result_summary.write('%s, %s, %s, %s, %s, %s, %s\n' % (test_name, n_derated, max_power,
-                                                                           p_ac, p_dc, mppt_eff, mppt_acc))
-                    ts.log_warning('Avg data for %s: P_AC = %0.1f W, P_DC = %0.1f W, MPPT Eff = %0.4f, '
-                                   'MPPT Accuracy = %s\n' % (test_name, p_ac, p_dc, mppt_eff, mppt_acc))
+                        # Create new entry for summary file
+                        mppt_eff = 100. * (p_ac / p_dc)
+                        result_summary.write('%s, %s, %s, %s, %s, %s, %s\n' % (test_name, n_derated, max_power,
+                                                                               p_ac, p_dc, mppt_eff, mppt_acc))
+                        ts.log_warning('Avg data for %s: P_AC = %0.1f W, P_DC = %0.1f W, MPPT Eff = %0.4f, '
+                                       'MPPT Accuracy = %0.4f' % (test_name, p_ac, p_dc, mppt_eff, mppt_acc))
 
         result = script.RESULT_COMPLETE
 
@@ -195,6 +201,7 @@ info.param('test.n_meas', label='Number of Measurements at Each I-V Curve Config
 info.param('test.p_max', label='Inverter Nameplate Power (W)?', default=33000.)
 info.param('test.t_start', label='Inverter Start Up Time (s)?', default=300.)
 info.param('test.t_stable', label='Inverter Stabilization Time (s)?', default=5.)
+info.param('test.test_start', label='Start Test Number?', default=1)
 
 hil.params(info)
 das.params(info)
