@@ -6,7 +6,7 @@ Test 1: 0 through 6 strings derated by 50% with 2 different v_mpp levels for eac
 string (600 and 800 V) = 448 Tests
     Set 1: 0 strings derated, all combinations of 600V and 800V (2^6 count)
     Set 2: 1 string derated to 50%, rest at 100%, all combinations of 600V and 800V (2^6 count)
-    Set 2: 2 strings derated to 50%, rest at 100%, all combinations of 600V and 800V (2^6 count)
+    Set 3: 2 strings derated to 50%, rest at 100%, all combinations of 600V and 800V (2^6 count)
 
 Test 2: Iterate over 3 I-V curves (600, 720, 800 Vmp) with derates of
 20%, 40%, 60% and 80%  for all string combinations = 768 Tests
