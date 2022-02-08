@@ -100,25 +100,27 @@ def test_run():
                     max_power = ((n_pv - n_derated) + (n_derated * derating)) * p_max_per_input
                     total_runs += 1
 
-                    # Set PV I-V Curves
                     voltages = []
                     for i in range(n_pv):  # 0, 1, 2 ... 5
-                        if n_derated <= i:
-                            p_mp = p_max_per_input
-                        else:
-                            p_mp = p_max_per_input * derating
                         v_mp = v_mp_options[str(combo[i]) == '1']  # True = 800, False = 600
                         voltages.append(v_mp)
-                        ts.log_debug('Setting PV #%d to p_mp = %0.2f Pmp, %0.2f Vmp' % (i + 1, p_mp, v_mp))
-                        pv[i].iv_curve_config(pmp=p_mp, vmp=v_mp)
-
                     test_name = 'n_derated=%s_strings=%s' % (n_derated, voltages)
 
                     if total_runs < test_start:
                         ts.log_debug('Start Test = %d. Skipping Test #%d: %s' % (test_start, total_runs, test_name))
                     else:
-                        ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
+                        # Set PV I-V Curves
+                        voltages = []
+                        for i in range(n_pv):  # 0, 1, 2 ... 5
+                            if n_derated <= i:
+                                p_mp = p_max_per_input
+                            else:
+                                p_mp = p_max_per_input * derating
+                            v_mp = v_mp_options[str(combo[i]) == '1']  # True = 800, False = 600
+                            # ts.log_debug('Setting PV #%d to p_mp = %0.2f Pmp, %0.2f Vmp' % (i + 1, p_mp, v_mp))
+                            pv[i].iv_curve_config(pmp=p_mp, vmp=v_mp)
 
+                        ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
                         ts.sleep(t_stable)  # give inverter time to reach steady-state
                         daq.data_capture(True)  # begin dataset for this test case
 
@@ -127,7 +129,7 @@ def test_run():
                         mppt_acc = 0.
                         for meas in range(n_meas):  # Take n_meas measurements
                             daq.sc['PV_P_MPP_NO_DERATE'] = p_max_per_input
-                            daq.sc['PV_V_MPP'] = voltages
+                            daq.sc['PV_V_MPP'] = str(voltages)
                             for i in range(n_pv):  # Get PV data and add to the soft channel list
                                 pv_data = pv[i].measurements_get()
                                 daq.sc['Test'] = test_name
