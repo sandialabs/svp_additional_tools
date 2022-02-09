@@ -104,7 +104,7 @@ def test_run():
                     for i in range(n_pv):  # 0, 1, 2 ... 5
                         v_mp = v_mp_options[str(combo[i]) == '1']  # True = 800, False = 600
                         voltages.append(v_mp)
-                    test_name = 'n_derated=%s_strings=%s' % (n_derated, voltages)
+                    test_name = 'n_derated=%s_strings=%s' % (n_derated, str(voltages).replace(',', ''))
 
                     if total_runs < test_start:
                         ts.log_debug('Start Test = %d. Skipping Test #%d: %s' % (test_start, total_runs, test_name))
@@ -129,7 +129,7 @@ def test_run():
                         mppt_acc = 0.
                         for meas in range(n_meas):  # Take n_meas measurements
                             daq.sc['PV_P_MPP_NO_DERATE'] = p_max_per_input
-                            daq.sc['PV_V_MPP'] = str(voltages)
+                            daq.sc['PV_V_MPP'] = str(voltages).replace(',', '')
                             for i in range(n_pv):  # Get PV data and add to the soft channel list
                                 pv_data = pv[i].measurements_get()
                                 daq.sc['Test'] = test_name
