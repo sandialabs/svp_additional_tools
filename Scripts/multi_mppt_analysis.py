@@ -110,7 +110,6 @@ def test_run():
                         ts.log_debug('Start Test = %d. Skipping Test #%d: %s' % (test_start, total_runs, test_name))
                     else:
                         # Set PV I-V Curves
-                        voltages = []
                         for i in range(n_pv):  # 0, 1, 2 ... 5
                             if n_derated <= i:
                                 p_mp = p_max_per_input
