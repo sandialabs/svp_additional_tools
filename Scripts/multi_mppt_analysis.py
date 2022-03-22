@@ -111,6 +111,16 @@ def test_run():
                     else:
                         # Set PV I-V Curves
                         voltages = []
+
+                        ts.log_debug('Power cycling DC side to clear MPPT voltage data.')
+                        for i in range(n_pv):  # 0, 1, 2 ... 5
+                            pv[i].power_off()
+                        ts.sleep(10)
+                        for i in range(n_pv):  # 0, 1, 2 ... 5
+                            pv[i].power_on()
+                            ts.sleep(1)
+                            pv[i].clear_faults()
+
                         for i in range(n_pv):  # 0, 1, 2 ... 5
                             if n_derated <= i:
                                 p_mp = p_max_per_input
@@ -119,6 +129,8 @@ def test_run():
                             v_mp = v_mp_options[str(combo[i]) == '1']  # True = 800, False = 600
                             # ts.log_debug('Setting PV #%d to p_mp = %0.2f Pmp, %0.2f Vmp' % (i + 1, p_mp, v_mp))
                             pv[i].iv_curve_config(pmp=p_mp, vmp=v_mp)
+                            ts.sleep(1)
+                            pv[i].clear_faults()
 
                         ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
                         ts.sleep(t_stable)  # give inverter time to reach steady-state
