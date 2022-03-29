@@ -112,15 +112,6 @@ def test_run():
                         # Set PV I-V Curves
                         voltages = []
 
-                        ts.log_debug('Power cycling DC side to clear MPPT voltage data.')
-                        for i in range(n_pv):  # 0, 1, 2 ... 5
-                            pv[i].power_off()
-                        ts.sleep(10)
-                        for i in range(n_pv):  # 0, 1, 2 ... 5
-                            pv[i].power_on()
-                            ts.sleep(1)
-                            pv[i].clear_faults()
-
                         for i in range(n_pv):  # 0, 1, 2 ... 5
                             if n_derated <= i:
                                 p_mp = p_max_per_input
@@ -134,8 +125,41 @@ def test_run():
 
                         ts.log_debug('Starting Test #%d: %s' % (total_runs, test_name))
                         ts.sleep(t_stable)  # give inverter time to reach steady-state
-                        daq.data_capture(True)  # begin dataset for this test case
 
+                        '''
+                        Confirm inverter is working correctly
+                        '''
+                        accuracy_thresh = 90.0
+                        mppt_not_started = False  # Could be improved slightly with a string-by-string assessment
+                        for i in range(n_pv):  # Confirm all DC inputs are tracking the MPP
+                            pv_data = pv[i].measurements_get()
+                            if pv_data['MPPT_Accuracy'] < accuracy_thresh:
+                                mppt_not_started = True
+
+                        while mppt_not_started:
+                            ts.log_debug('Power cycling DC side to clear MPPT voltage data.')
+                            for i in range(n_pv):  # 0, 1, 2 ... 5
+                                pv[i].power_off()
+                            ts.sleep(10)
+                            for i in range(n_pv):  # 0, 1, 2 ... 5
+                                pv[i].power_on()
+                                ts.sleep(1)
+                                pv[i].clear_faults()
+                            ts.sleep(t_stable)  # give inverter time to reset
+
+                            mppt_not_started = False  # Could be improved slightly with a string-by-string assessment
+                            for i in range(n_pv):  # Confirm all DC inputs are tracking the MPP
+                                pv_data = pv[i].measurements_get()
+                                if pv_data['MPPT_Accuracy'] < accuracy_thresh:
+                                    mppt_not_started = True
+                                    ts.log_warning('DC input %d is below the %0.2f%% threshold. Resetting DC Inputs...'
+                                                   % (i, accuracy_thresh))
+                        '''
+                        Begin data acquisition
+                        '''
+                        ts.log_debug('All inputs are above %0.2f%% efficiency. Beginning data acquisition.' %
+                                     accuracy_thresh)
+                        daq.data_capture(True)  # begin dataset for this test case
                         p_ac = 0.
                         p_dc = 0.
                         mppt_acc = 0.
