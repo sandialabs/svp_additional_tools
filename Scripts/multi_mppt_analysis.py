@@ -136,8 +136,10 @@ def test_run():
                             if pv_data['MPPT_Accuracy'] < accuracy_thresh:
                                 mppt_not_started = True
 
+                        retries = 0
                         while mppt_not_started:
-                            ts.log_debug('Power cycling DC side to clear MPPT voltage data.')
+                            retries += 1
+                            ts.log_debug('Power cycling DC side to clear MPPT voltage data. Try #%d' % retries)
                             for i in range(n_pv):  # 0, 1, 2 ... 5
                                 pv[i].power_off()
                             ts.sleep(10)
