@@ -97,7 +97,7 @@ def readRestorePowerControl():
 
 if __name__ == "__main__":
 
-    ipaddr = '134.253.142.44'
+    ipaddr = '10.1.2.44'
     #ipaddr = str(raw_input('ip address: '))
     device = None
 
